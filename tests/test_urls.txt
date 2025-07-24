@@ -1,0 +1,9 @@
+# URLs de prueba para testing
+# Una URL por línea
+
+# Alkosto - Productos reales para testing
+https://www.alkosto.com/panal-pampers-cruisers-360-fit-s5-56-unidades/p/037000715078
+https://www.alkosto.com/celular-honor-x5b-plus-256gb-purpura/p/6936520855360
+
+# Agregar más URLs aquí para testing:
+# https://www.alkosto.com/otro-producto/p/123456789

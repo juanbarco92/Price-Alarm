@@ -1,0 +1,12 @@
+# Configuración de productos a monitorear
+# Agrega aquí las URLs de los productos que quieres rastrear
+
+- url: https://www.alkosto.com/panal-pampers-cruisers-360-fit-s5-56-unidades/p/037000715078
+  alias: pampers_cruisers_t5
+
+- url: https://www.alkosto.com/celular-honor-x5b-plus-256gb-purpura/p/6936520855360
+  alias: honor_x5b_plus_256gb
+
+# Ejemplo de más productos:
+# - url: https://www.alkosto.com/otro-producto/p/123456789
+#   alias: producto_ejemplo

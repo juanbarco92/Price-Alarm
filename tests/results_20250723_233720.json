@@ -1,0 +1,72 @@
+[
+  {
+    "url": "# URLs de prueba para testing",
+    "adapter": "test",
+    "success": true,
+    "product_name": "Producto de Prueba",
+    "current_price": 30000.0,
+    "old_price": null,
+    "error": null,
+    "timestamp": "2025-07-23T23:36:43.144782"
+  },
+  {
+    "url": "# Una URL por línea",
+    "adapter": "test",
+    "success": true,
+    "product_name": "Producto de Prueba",
+    "current_price": 26100.0,
+    "old_price": 35600.0,
+    "error": null,
+    "timestamp": "2025-07-23T23:36:45.145760"
+  },
+  {
+    "url": "# Alkosto - Productos reales para testing",
+    "adapter": "test",
+    "success": true,
+    "product_name": "Producto de Prueba",
+    "current_price": 34300.0,
+    "old_price": 37800.0,
+    "error": null,
+    "timestamp": "2025-07-23T23:36:47.147202"
+  },
+  {
+    "url": "https://www.alkosto.com/panal-pampers-cruisers-360-fit-s5-56-unidades/p/037000715078",
+    "adapter": "alkosto",
+    "success": true,
+    "product_name": "Pañal PAMPERS Cruisers 360 fit s5 56 Unidades",
+    "current_price": 146900.0,
+    "old_price": 146900.0,
+    "error": null,
+    "timestamp": "2025-07-23T23:37:02.100634"
+  },
+  {
+    "url": "https://www.alkosto.com/celular-honor-x5b-plus-256gb-purpura/p/6936520855360",
+    "adapter": "alkosto",
+    "success": true,
+    "product_name": "Celular HONOR X5b Plus 256GB Purpura",
+    "current_price": 599900.0,
+    "old_price": 799900.0,
+    "error": null,
+    "timestamp": "2025-07-23T23:37:16.474304"
+  },
+  {
+    "url": "# Agregar más URLs aquí para testing:",
+    "adapter": "test",
+    "success": true,
+    "product_name": "Producto de Prueba",
+    "current_price": 29900.0,
+    "old_price": null,
+    "error": null,
+    "timestamp": "2025-07-23T23:37:18.475225"
+  },
+  {
+    "url": "# https://www.alkosto.com/otro-producto/p/123456789",
+    "adapter": "alkosto",
+    "success": false,
+    "product_name": null,
+    "current_price": null,
+    "old_price": null,
+    "error": "No se pudo extraer el precio: Page.goto: Protocol error (Page.navigate): Cannot navigate to invalid URL\nCall log:\n  - navigating to \"# https://www.alkosto.com/otro-producto/p/123456789\", waiting until \"networkidle\"\n",
+    "timestamp": "2025-07-23T23:37:20.488410"
+  }
+]
