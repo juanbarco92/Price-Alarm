@@ -1,0 +1,39 @@
+# Scraper Dockerfile with Playwright
+FROM mcr.microsoft.com/playwright/python:v1.40.0-jammy
+
+WORKDIR /app
+
+# Install additional system dependencies
+RUN apt-get update && apt-get install -y \
+    postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Poetry
+RUN pip install poetry
+
+# Copy poetry files
+COPY pyproject.toml poetry.lock* ./
+
+# Configure poetry
+RUN poetry config virtualenvs.create false
+
+# Install all dependencies (simplified approach)
+RUN poetry install --no-root
+
+# Install Playwright browsers
+RUN playwright install chromium
+RUN playwright install-deps chromium
+
+# Copy application code
+COPY . .
+
+# Set environment variables
+ENV PYTHONPATH=/app
+
+# Create user for security
+RUN useradd --create-home --shell /bin/bash scraper
+RUN chown -R scraper:scraper /app
+USER scraper
+
+# Default command (can be overridden)
+CMD ["python", "scraper/track.py"]

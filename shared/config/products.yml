@@ -1,0 +1,38 @@
+# Configuración jerárquica de productos a monitorear
+# Estructura: Producto -> Presentaciones -> Tiendas/URLs
+
+products:
+  - name: "Pañales Pampers Cruisers 360 T5"
+    alias: "pampers_cruisers_t5"
+    presentations:
+      - size: "56 unidades"
+        unit_count: 56
+        stores:
+          - name: "Alkosto"
+            url: "https://www.alkosto.com/panal-pampers-cruisers-360-fit-s5-56-unidades/p/037000715078"
+
+  - name: "Celular Honor X5b Plus"
+    alias: "honor_x5b_plus"
+    presentations:
+      - size: "256GB Purple"
+        unit_count: 1
+        stores:
+          - name: "Alkosto"
+            url: "https://www.alkosto.com/celular-honor-x5b-plus-256gb-purpura/p/6936520855360"
+
+# Ejemplo de producto con múltiples presentaciones y tiendas:
+# - name: "Producto Ejemplo"
+#   alias: "producto_ejemplo"
+#   presentations:
+#     - size: "Pequeño (10 unidades)"
+#       unit_count: 10
+#       stores:
+#         - name: "Alkosto"
+#           url: "https://www.alkosto.com/producto-pequeno/p/123"
+#         - name: "Éxito"
+#           url: "https://www.exito.com/producto-pequeno"
+#     - size: "Grande (20 unidades)"
+#       unit_count: 20
+#       stores:
+#         - name: "Alkosto"
+#           url: "https://www.alkosto.com/producto-grande/p/456"

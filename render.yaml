@@ -1,0 +1,97 @@
+# Render.com deployment configuration
+services:
+  # Web application (Flask dashboard)
+  - type: web
+    name: price-alarm-web
+    env: python
+    plan: free
+    buildCommand: |
+      pip install poetry &&
+      poetry config virtualenvs.create false &&
+      poetry install --only=main,app
+    startCommand: gunicorn --bind 0.0.0.0:$PORT --workers 2 app.main:create_app()
+    envVars:
+      - key: PYTHONPATH
+        value: /opt/render/project/src
+      - key: FLASK_ENV
+        value: production
+      - key: TG_TOKEN
+        fromService:
+          type: pserv
+          name: price-alarm-web
+          envVarKey: TG_TOKEN
+      - key: TG_CHAT_ID
+        fromService:
+          type: pserv
+          name: price-alarm-web
+          envVarKey: TG_CHAT_ID
+      - key: DATABASE_URL
+        fromDatabase:
+          name: price-alarm-db
+          property: connectionString
+    healthCheckPath: /health
+
+  # Background worker for manual jobs
+  - type: worker
+    name: price-alarm-worker
+    env: python
+    plan: free
+    buildCommand: |
+      pip install poetry &&
+      poetry config virtualenvs.create false &&
+      poetry install --only=main,scraper
+    startCommand: python -c "import time; print('Worker ready'); time.sleep(3600)"
+    envVars:
+      - key: PYTHONPATH
+        value: /opt/render/project/src
+      - key: TG_TOKEN
+        fromService:
+          type: pserv
+          name: price-alarm-web
+          envVarKey: TG_TOKEN
+      - key: TG_CHAT_ID
+        fromService:
+          type: pserv
+          name: price-alarm-web
+          envVarKey: TG_CHAT_ID
+      - key: DATABASE_URL
+        fromDatabase:
+          name: price-alarm-db
+          property: connectionString
+
+  # Cron job for automated scraping
+  - type: cron
+    name: price-alarm-scraper
+    env: python
+    plan: free
+    schedule: "0 6,18 * * *"  # 6 AM and 6 PM daily
+    buildCommand: |
+      pip install poetry &&
+      poetry config virtualenvs.create false &&
+      poetry install --only=main,scraper &&
+      playwright install chromium &&
+      playwright install-deps chromium
+    startCommand: python scraper/track.py
+    envVars:
+      - key: PYTHONPATH
+        value: /opt/render/project/src
+      - key: TG_TOKEN
+        fromService:
+          type: pserv
+          name: price-alarm-web
+          envVarKey: TG_TOKEN
+      - key: TG_CHAT_ID
+        fromService:
+          type: pserv
+          name: price-alarm-web
+          envVarKey: TG_CHAT_ID
+      - key: DATABASE_URL
+        fromDatabase:
+          name: price-alarm-db
+          property: connectionString
+
+# Database
+databases:
+  - name: price-alarm-db
+    databaseName: pricealarm
+    user: pricealarm

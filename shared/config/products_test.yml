@@ -1,0 +1,8 @@
+# Configuración de productos para PRUEBAS
+# Estos son productos simulados para demostrar el funcionamiento
+
+- url: https://test.example.com/pampers-cruisers
+  alias: pampers_test
+
+- url: https://test.example.com/producto-ejemplo
+  alias: producto_test

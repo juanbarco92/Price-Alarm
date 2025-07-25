@@ -1,0 +1,84 @@
+version: '3.8'
+
+services:
+  # Base de datos PostgreSQL para desarrollo
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: pricealarm
+      POSTGRES_USER: priceuser
+      POSTGRES_PASSWORD: pricepass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U priceuser -d pricealarm"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis para queue system (futuro)
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Aplicación web
+  web:
+    build:
+      context: .
+      dockerfile: infra/Dockerfile.web
+    ports:
+      - "5000:5000"
+    environment:
+      - DATABASE_URL=postgresql://priceuser:pricepass@db:5432/pricealarm
+      - REDIS_URL=redis://redis:6379/0
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      # Mount source code for development
+      - ./app:/app/app
+      - ./shared:/app/shared
+      - ./.env:/app/.env
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Scraper service
+  scraper:
+    build:
+      context: .
+      dockerfile: infra/Dockerfile.scraper
+    environment:
+      - DATABASE_URL=postgresql://priceuser:pricepass@db:5432/pricealarm
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      # Mount source code for development
+      - ./scraper:/app/scraper
+      - ./shared:/app/shared
+      - ./.env:/app/.env
+    # Solo para testing manual, en producción sería un cron job
+    profiles:
+      - manual
+
+volumes:
+  postgres_data:
