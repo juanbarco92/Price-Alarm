@@ -1,6 +1,6 @@
 # 🐳 Desarrollo con Docker
 
-Esta guía te ayuda a desarrollar Price Alarm usando Docker, lo cual es más realista y evita problemas de configuración local.
+Esta guía te ayuda a desarrollar Price Alarm usando Docker, replicando el ambiente de producción de Render.com.
 
 ## 🚀 Inicio Rápido
 
@@ -9,11 +9,14 @@ Esta guía te ayuda a desarrollar Price Alarm usando Docker, lo cual es más rea
 git clone https://github.com/juanbarco92/Price-Alarm.git
 cd Price-Alarm
 
-# 2. Setup inicial (construye imágenes, inicia DB, configura todo)
-python tools/dev_docker.py setup
+# 2. Setup inicial
+make docker-setup
 
-# 3. Levantar todos los servicios
-python tools/dev_docker.py up
+# 3. Ambiente de producción (replica Render)
+make docker-up
+
+# O para desarrollo con hot reload
+make docker-up-dev
 ```
 
 **¡Listo!** Accede a http://localhost:5000
@@ -25,7 +28,35 @@ python tools/dev_docker.py up
   - En Windows: Inicia Docker Desktop desde el menú de inicio
   - Verifica que funcione: `docker --version`
 - **Git** - Para clonar el repositorio
-- **Python 3.11+** - Solo para ejecutar los scripts de desarrollo
+- **Make** - Para ejecutar comandos (incluido en WSL/Linux/Mac)
+
+## 🌐 Modos de Ejecución
+
+### 🏭 **Modo Producción (replica Render)**
+```bash
+make docker-up
+```
+- ✅ Usa **gunicorn** como en Render
+- ✅ **Sin hot reload** (como producción)
+- ✅ Variables de entorno de producción
+- ✅ **Sin mount** de código fuente
+
+### 🔧 **Modo Desarrollo**
+```bash
+make docker-up-dev
+```
+- ✅ **Hot reload** automático
+- ✅ **Flask debug** habilitado
+- ✅ **Mount** de código fuente
+- ✅ Desarrollo más ágil
+
+### ⏰ **Modo con Scheduler**
+```bash
+make docker-cron
+```
+- ✅ **Scheduler automático** cada 6 horas
+- ✅ Simula el **cron job** de Render
+- ✅ Scraping automático sin intervención
 
 ## 🐳 Servicios Incluidos
 

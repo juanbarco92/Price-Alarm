@@ -29,7 +29,7 @@ services:
       timeout: 5s
       retries: 5
 
-  # Aplicación web
+  # Aplicación web (replicando ambiente Render)
   web:
     build:
       context: .
@@ -37,20 +37,22 @@ services:
     ports:
       - "5000:5000"
     environment:
+      - PYTHONPATH=/app
+      - FLASK_ENV=production
+      - FLASK_DEBUG=0
       - DATABASE_URL=postgresql://priceuser:pricepass@db:5432/pricealarm
       - REDIS_URL=redis://redis:6379/0
-      - FLASK_ENV=development
-      - FLASK_DEBUG=1
+      - TG_TOKEN=${TG_TOKEN}
+      - TG_CHAT_ID=${TG_CHAT_ID}
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
     volumes:
-      # Mount source code for development
-      - ./app:/app/app
-      - ./shared:/app/shared
+      # Solo monta .env para variables, no código fuente (como en producción)
       - ./.env:/app/.env
+    command: ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "2", "--timeout", "120", "app.main:create_app()"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
       interval: 30s
@@ -58,27 +60,61 @@ services:
       retries: 3
       start_period: 40s
 
-  # Scraper service
+  # Scraper service (replicando cron job de Render)
   scraper:
     build:
       context: .
       dockerfile: infra/Dockerfile.scraper
     environment:
+      - PYTHONPATH=/app
       - DATABASE_URL=postgresql://priceuser:pricepass@db:5432/pricealarm
       - REDIS_URL=redis://redis:6379/0
+      - TG_TOKEN=${TG_TOKEN}
+      - TG_CHAT_ID=${TG_CHAT_ID}
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
     volumes:
-      # Mount source code for development
-      - ./scraper:/app/scraper
-      - ./shared:/app/shared
+      # Solo monta .env para variables, no código fuente (como en producción)
       - ./.env:/app/.env
-    # Solo para testing manual, en producción sería un cron job
+    # Simula el cron job de Render (6 AM y 6 PM diario)
+    # En desarrollo, se ejecuta manualmente o con docker-compose run
     profiles:
       - manual
+
+  # Cron scheduler (simula el cron job de Render)
+  cron-scheduler:
+    build:
+      context: .
+      dockerfile: infra/Dockerfile.scraper
+    environment:
+      - PYTHONPATH=/app
+      - DATABASE_URL=postgresql://priceuser:pricepass@db:5432/pricealarm
+      - REDIS_URL=redis://redis:6379/0
+      - TG_TOKEN=${TG_TOKEN}
+      - TG_CHAT_ID=${TG_CHAT_ID}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./.env:/app/.env
+    # Ejecuta cada 6 horas simulando el cron "0 6,18 * * *"
+    command: >
+      sh -c "
+        echo 'Cron scheduler iniciado. Ejecutando scraping cada 6 horas...'
+        while true; do
+          echo '[$(date)] Ejecutando scraping programado...'
+          python scraper/track.py
+          echo '[$(date)] Scraping completado. Esperando 6 horas...'
+          sleep 21600
+        done
+      "
+    profiles:
+      - cron
 
 volumes:
   postgres_data:

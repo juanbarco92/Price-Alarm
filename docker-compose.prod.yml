@@ -1,0 +1,43 @@
+# Override para ambiente de producción (simula Render)
+version: '3.8'
+
+services:
+  web:
+    command: ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "2", "--timeout", "120", "app.main:create_app()"]
+    environment:
+      - PYTHONPATH=/app
+      - FLASK_ENV=production
+      - FLASK_DEBUG=0
+      - TG_TOKEN=${TG_TOKEN}
+      - TG_CHAT_ID=${TG_CHAT_ID}
+    # Sin volúmenes para simular producción real
+
+  # Scheduler que simula el cron job de Render  
+  scheduler:
+    build:
+      context: .
+      dockerfile: infra/Dockerfile.scraper
+    environment:
+      - PYTHONPATH=/app
+      - DATABASE_URL=postgresql://priceuser:pricepass@db:5432/pricealarm
+      - REDIS_URL=redis://redis:6379/0
+      - TG_TOKEN=${TG_TOKEN}
+      - TG_CHAT_ID=${TG_CHAT_ID}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./.env:/app/.env
+    command: >
+      sh -c "
+        echo 'Scheduler iniciado - simula cron de Render (6 AM y 6 PM)'
+        while true; do
+          echo '[$(date)] Ejecutando scraping programado...'
+          python scraper/track.py || echo 'Error en scraping'
+          echo '[$(date)] Próximo scraping en 6 horas (21600 seg)'
+          sleep 21600
+        done
+      "
+    restart: unless-stopped

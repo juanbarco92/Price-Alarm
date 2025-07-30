@@ -4,29 +4,46 @@ Sistema inteligente de monitoreo de precios con dashboard web y alertas automát
 
 ## 🚀 Inicio Rápido
 
-### 🐳 **Con Docker (Recomendado)**
-```bash
-# 0. Asegúrate de que Docker Desktop esté corriendo
-# 1. Clonar repositorio
-git clone https://github.com/juanbarco92/Price-Alarm.git
-cd Price-Alarm
+### 🐳 **Docker (Única opción local)**
 
-# 2. Setup y ejecutar con Docker
-python tools/dev_docker.py setup
-python tools/dev_docker.py up
-```
-
-### 🐍 **Con Python local**
 ```bash
 # 1. Clonar repositorio
 git clone https://github.com/juanbarco92/Price-Alarm.git
 cd Price-Alarm
 
-# 2. Ejecutar servidor de desarrollo
-python tools/dev_server.py
+# 2. Setup inicial  
+make setup
+
+# 3. Desarrollo diario
+make dev
+
+# 4. Testing pre-deploy
+make prod
 ```
 
 **¡Listo!** Accede a http://localhost:5000
+
+## 🛠️ **Comandos Disponibles**
+
+```bash
+make help       # 📋 Ver todos los comandos
+make setup      # 📦 Configuración inicial
+make dev        # 🛠️ Ambiente desarrollo (hot reload)
+make prod       # 🏭 Ambiente producción (replica Render)
+make test       # 🧪 Ejecutar tests
+make scraper    # 🔍 Scraper manual
+make logs       # 📄 Ver logs
+make down       # 🔴 Parar servicios
+make clean      # 🧹 Limpiar todo
+```
+
+## 🌐 Despliegue en Producción
+
+El proyecto está configurado para **Render.com**:
+- **Web Service**: Dashboard Flask con gunicorn
+- **Cron Job**: Scraping automático a las 6 AM y 6 PM  
+- **PostgreSQL**: Base de datos gestionada
+- **Variables**: TG_TOKEN, TG_CHAT_ID en Render
 
 ## 📖 Documentación
 

@@ -1,0 +1,25 @@
+# Docker Compose para desarrollo con hot reload
+# Uso: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+version: '3.8'
+
+services:
+  # Override para desarrollo con hot reload
+  web:
+    environment:
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+    volumes:
+      # Mount código fuente para desarrollo con hot reload
+      - ./app:/app/app
+      - ./shared:/app/shared
+      - ./.env:/app/.env
+    command: ["python", "app/main.py"]
+  
+  # Override para scraper en desarrollo
+  scraper:
+    volumes:
+      # Mount código fuente para desarrollo
+      - ./scraper:/app/scraper
+      - ./shared:/app/shared
+      - ./.env:/app/.env
