@@ -12,15 +12,25 @@
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
         .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
-        .btn { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; }
+        .btn { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; margin: 2px; }
         .btn:hover { background: #0056b3; }
         .btn-danger { background: #dc3545; }
         .btn-danger:hover { background: #c82333; }
+        .btn-success { background: #28a745; }
+        .btn-success:hover { background: #218838; }
+        .btn-warning { background: #ffc107; color: #212529; }
+        .btn-warning:hover { background: #e0a800; }
+        .btn-sm { padding: 5px 10px; font-size: 12px; }
         .product-list { margin-top: 20px; }
-        .product-item { border: 1px solid #ddd; padding: 15px; margin-bottom: 10px; border-radius: 4px; }
+        .product-item { border: 1px solid #ddd; padding: 15px; margin-bottom: 10px; border-radius: 4px; position: relative; }
         .product-item h4 { margin: 0 0 10px 0; }
-        .presentation { margin-left: 20px; margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 4px; }
-        .store { margin-left: 20px; margin-top: 5px; }
+        .product-actions { position: absolute; top: 15px; right: 15px; }
+        .presentation { margin-left: 20px; margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 4px; position: relative; }
+        .presentation-actions { position: absolute; top: 10px; right: 10px; }
+        .store { margin-left: 20px; margin-top: 5px; padding: 8px; background: #e9ecef; border-radius: 4px; position: relative; }
+        .store-actions { position: absolute; top: 8px; right: 8px; }
+        .edit-form { display: none; background: #fff3cd; padding: 15px; border-radius: 4px; margin-top: 10px; }
+        .add-section { background: #d1ecf1; padding: 15px; border-radius: 4px; margin-top: 10px; display: none; }
     </style>
 </head>
 <body>
@@ -137,14 +147,69 @@
                 
                 if (data.products && data.products.length > 0) {
                     container.innerHTML = data.products.map(product => `
-                        <div class="product-item">
+                        <div class="product-item" id="product-${product.id}">
+                            <div class="product-actions">
+                                <button class="btn btn-warning btn-sm" onclick="editProduct(${product.id}, '${product.name}', '${product.alias}')">✏️ Editar</button>
+                                <button class="btn btn-success btn-sm" onclick="showAddPresentation(${product.id})">➕ Presentación</button>
+                                <button class="btn btn-danger btn-sm" onclick="deleteProduct(${product.id}, '${product.name}')">🗑️ Eliminar</button>
+                            </div>
                             <h4>${product.name} (${product.alias})</h4>
+                            
+                            <div class="edit-form" id="edit-product-${product.id}">
+                                <h5>Editar Producto</h5>
+                                <div class="form-group">
+                                    <label>Nombre:</label>
+                                    <input type="text" id="edit-name-${product.id}" value="${product.name}">
+                                </div>
+                                <div class="form-group">
+                                    <label>Alias:</label>
+                                    <input type="text" id="edit-alias-${product.id}" value="${product.alias}">
+                                </div>
+                                <button class="btn btn-success btn-sm" onclick="saveProduct(${product.id})">💾 Guardar</button>
+                                <button class="btn btn-sm" onclick="cancelEdit('product', ${product.id})">❌ Cancelar</button>
+                            </div>
+                            
+                            <div class="add-section" id="add-presentation-${product.id}">
+                                <h5>Agregar Nueva Presentación</h5>
+                                <div class="form-group">
+                                    <label>Tamaño/Descripción:</label>
+                                    <input type="text" id="new-pres-size-${product.id}" placeholder="ej: 56 unidades">
+                                </div>
+                                <div class="form-group">
+                                    <label>Cantidad de unidades:</label>
+                                    <input type="number" id="new-pres-count-${product.id}" placeholder="56">
+                                </div>
+                                <button class="btn btn-success btn-sm" onclick="savePresentation(${product.id})">💾 Agregar Presentación</button>
+                                <button class="btn btn-sm" onclick="cancelAdd('presentation', ${product.id})">❌ Cancelar</button>
+                            </div>
+                            
                             ${product.presentations.map(presentation => `
-                                <div class="presentation">
+                                <div class="presentation" id="presentation-${presentation.id}">
+                                    <div class="presentation-actions">
+                                        <button class="btn btn-success btn-sm" onclick="showAddStore(${presentation.id})">➕ Tienda</button>
+                                    </div>
                                     <strong>📦 ${presentation.size}</strong> (${presentation.unit_count} unidades)
+                                    
+                                    <div class="add-section" id="add-store-${presentation.id}">
+                                        <h6>Agregar Nueva Tienda</h6>
+                                        <div class="form-group">
+                                            <label>Nombre de la tienda:</label>
+                                            <input type="text" id="new-store-name-${presentation.id}" placeholder="ej: Alkosto">
+                                        </div>
+                                        <div class="form-group">
+                                            <label>URL del producto:</label>
+                                            <input type="url" id="new-store-url-${presentation.id}" placeholder="https://...">
+                                        </div>
+                                        <button class="btn btn-success btn-sm" onclick="saveStore(${presentation.id})">💾 Agregar Tienda</button>
+                                        <button class="btn btn-sm" onclick="cancelAdd('store', ${presentation.id})">❌ Cancelar</button>
+                                    </div>
+                                    
                                     ${presentation.stores.map(store => `
-                                        <div class="store">
-                                            🏪 ${store.name}: <a href="${store.url}" target="_blank">Ver producto</a>
+                                        <div class="store" id="store-${store.id}">
+                                            <div class="store-actions">
+                                                <button class="btn btn-danger btn-sm" onclick="deleteStore(${store.id}, '${store.store_name}')">🗑️</button>
+                                            </div>
+                                            🏪 ${store.store_name}: <a href="${store.url}" target="_blank">Ver producto</a>
                                         </div>
                                     `).join('')}
                                 </div>
@@ -174,6 +239,153 @@
         function clearData() {
             if (confirm('¿Estás seguro de que quieres limpiar toda la base de datos? Esta acción no se puede deshacer.')) {
                 alert('Función en desarrollo - Limpieza de datos');
+            }
+        }
+
+        // Edit/Delete functions
+        function editProduct(productId, name, alias) {
+            document.getElementById(`edit-product-${productId}`).style.display = 'block';
+            document.getElementById(`edit-name-${productId}`).value = name;
+            document.getElementById(`edit-alias-${productId}`).value = alias;
+        }
+
+        async function saveProduct(productId) {
+            const name = document.getElementById(`edit-name-${productId}`).value;
+            const alias = document.getElementById(`edit-alias-${productId}`).value;
+
+            try {
+                const response = await fetch(`/api/products/${productId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ name, alias })
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    alert('Producto actualizado exitosamente!');
+                    loadProducts();
+                } else {
+                    alert('Error: ' + result.message);
+                }
+            } catch (error) {
+                alert('Error de conexión: ' + error.message);
+            }
+        }
+
+        async function deleteProduct(productId, name) {
+            if (confirm(`¿Estás seguro de que quieres eliminar "${name}"? Esta acción eliminará también todas sus presentaciones y tiendas.`)) {
+                try {
+                    const response = await fetch(`/api/products/${productId}`, {
+                        method: 'DELETE'
+                    });
+
+                    const result = await response.json();
+                    
+                    if (response.ok) {
+                        alert('Producto eliminado exitosamente!');
+                        loadProducts();
+                    } else {
+                        alert('Error: ' + result.message);
+                    }
+                } catch (error) {
+                    alert('Error de conexión: ' + error.message);
+                }
+            }
+        }
+
+        function showAddPresentation(productId) {
+            document.getElementById(`add-presentation-${productId}`).style.display = 'block';
+        }
+
+        async function savePresentation(productId) {
+            const size = document.getElementById(`new-pres-size-${productId}`).value;
+            const unit_count = document.getElementById(`new-pres-count-${productId}`).value;
+
+            if (!size || !unit_count) {
+                alert('Por favor completa todos los campos');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/presentations', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        product_id: productId, 
+                        size: size, 
+                        unit_count: parseInt(unit_count) 
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    alert('Presentación agregada exitosamente!');
+                    loadProducts();
+                } else {
+                    alert('Error: ' + result.message);
+                }
+            } catch (error) {
+                alert('Error de conexión: ' + error.message);
+            }
+        }
+
+        function showAddStore(presentationId) {
+            document.getElementById(`add-store-${presentationId}`).style.display = 'block';
+        }
+
+        async function saveStore(presentationId) {
+            const store_name = document.getElementById(`new-store-name-${presentationId}`).value;
+            const url = document.getElementById(`new-store-url-${presentationId}`).value;
+
+            if (!store_name || !url) {
+                alert('Por favor completa todos los campos');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/stores', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        presentation_id: presentationId, 
+                        store_name: store_name, 
+                        url: url 
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    alert('Tienda agregada exitosamente!');
+                    loadProducts();
+                } else {
+                    alert('Error: ' + result.message);
+                }
+            } catch (error) {
+                alert('Error de conexión: ' + error.message);
+            }
+        }
+
+        function cancelEdit(type, id) {
+            document.getElementById(`edit-${type}-${id}`).style.display = 'none';
+        }
+
+        function cancelAdd(type, id) {
+            document.getElementById(`add-${type}-${id}`).style.display = 'none';
+        }
+
+        async function deleteStore(storeId, storeName) {
+            if (confirm(`¿Estás seguro de que quieres eliminar la tienda "${storeName}"?`)) {
+                // Esta función se puede implementar más tarde
+                alert('Función de eliminar tienda en desarrollo');
             }
         }
 

@@ -304,3 +304,175 @@ class PriceDatabase:
         except Exception as e:
             logger.error(f"Error obteniendo mejores precios para {product_alias}: {e}")
             return []
+    
+    def create_product(self, name: str, alias: str) -> int:
+        """Crea un nuevo producto y retorna su ID."""
+        try:
+            with self.get_connection() as conn:
+                with conn.cursor() as cursor:
+                    cursor.execute("""
+                        INSERT INTO products (name, alias, created_at)
+                        VALUES (%s, %s, CURRENT_TIMESTAMP)
+                        RETURNING id
+                    """, (name, alias))
+                    
+                    product_id = cursor.fetchone()[0]
+                    conn.commit()
+                    logger.info(f"Producto creado: {name} (ID: {product_id})")
+                    return product_id
+        except Exception as e:
+            logger.error(f"Error creando producto {name}: {e}")
+            raise
+    
+    def create_presentation(self, product_id: int, size: str, unit_count: int) -> int:
+        """Crea una nueva presentación para un producto y retorna su ID."""
+        try:
+            with self.get_connection() as conn:
+                with conn.cursor() as cursor:
+                    cursor.execute("""
+                        INSERT INTO presentations (product_id, size, unit_count, created_at)
+                        VALUES (%s, %s, %s, CURRENT_TIMESTAMP)
+                        RETURNING id
+                    """, (product_id, size, unit_count))
+                    
+                    presentation_id = cursor.fetchone()[0]
+                    conn.commit()
+                    logger.info(f"Presentación creada: {size} (ID: {presentation_id})")
+                    return presentation_id
+        except Exception as e:
+            logger.error(f"Error creando presentación {size}: {e}")
+            raise
+    
+    def create_store(self, presentation_id: int, store_name: str, url: str) -> int:
+        """Crea una nueva tienda para una presentación y retorna su ID."""
+        try:
+            with self.get_connection() as conn:
+                with conn.cursor() as cursor:
+                    cursor.execute("""
+                        INSERT INTO stores (presentation_id, store_name, url, created_at)
+                        VALUES (%s, %s, %s, CURRENT_TIMESTAMP)
+                        RETURNING id
+                    """, (presentation_id, store_name, url))
+                    
+                    store_id = cursor.fetchone()[0]
+                    conn.commit()
+                    logger.info(f"Tienda creada: {store_name} (ID: {store_id})")
+                    return store_id
+        except Exception as e:
+            logger.error(f"Error creando tienda {store_name}: {e}")
+            raise
+    
+    def get_all_products_with_details(self) -> List[Dict]:
+        """Obtiene todos los productos con sus presentaciones y tiendas."""
+        try:
+            with self.get_connection() as conn:
+                with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                    # Obtener productos
+                    cursor.execute("SELECT * FROM products ORDER BY name")
+                    products = cursor.fetchall()
+                    
+                    result = []
+                    for product in products:
+                        product_dict = dict(product)
+                        
+                        # Obtener presentaciones para este producto
+                        cursor.execute("""
+                            SELECT * FROM presentations 
+                            WHERE product_id = %s 
+                            ORDER BY size
+                        """, (product['id'],))
+                        presentations = cursor.fetchall()
+                        
+                        product_dict['presentations'] = []
+                        for presentation in presentations:
+                            pres_dict = dict(presentation)
+                            
+                            # Obtener tiendas para esta presentación
+                            cursor.execute("""
+                                SELECT * FROM stores 
+                                WHERE presentation_id = %s 
+                                ORDER BY store_name
+                            """, (presentation['id'],))
+                            stores = cursor.fetchall()
+                            
+                            pres_dict['stores'] = [dict(store) for store in stores]
+                            product_dict['presentations'].append(pres_dict)
+                        
+                        result.append(product_dict)
+                    
+                    return result
+        except Exception as e:
+            logger.error(f"Error obteniendo productos con detalles: {e}")
+            return []
+    
+    def delete_product(self, product_id: int) -> bool:
+        """Elimina un producto y todos sus datos relacionados."""
+        try:
+            with self.get_connection() as conn:
+                with conn.cursor() as cursor:
+                    # Las eliminaciones en cascada se manejan por las FK constraints
+                    cursor.execute("DELETE FROM products WHERE id = %s", (product_id,))
+                    conn.commit()
+                    logger.info(f"Producto eliminado: ID {product_id}")
+                    return True
+        except Exception as e:
+            logger.error(f"Error eliminando producto {product_id}: {e}")
+            return False
+    
+    def update_product(self, product_id: int, name: str = None, alias: str = None) -> bool:
+        """Actualiza los datos de un producto."""
+        try:
+            with self.get_connection() as conn:
+                with conn.cursor() as cursor:
+                    updates = []
+                    params = []
+                    
+                    if name:
+                        updates.append("name = %s")
+                        params.append(name)
+                    
+                    if alias:
+                        updates.append("alias = %s")
+                        params.append(alias)
+                    
+                    if updates:
+                        params.append(product_id)
+                        query = f"UPDATE products SET {', '.join(updates)} WHERE id = %s"
+                        cursor.execute(query, params)
+                        conn.commit()
+                        logger.info(f"Producto actualizado: ID {product_id}")
+                        return True
+                    
+                    return False
+        except Exception as e:
+            logger.error(f"Error actualizando producto {product_id}: {e}")
+            return False
+    
+    def get_price_history_by_alias(self, product_alias: str, limit: int = 50) -> List[Dict]:
+        """Obtiene el historial de precios para un producto por su alias."""
+        try:
+            with self.get_connection() as conn:
+                with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                    cursor.execute("""
+                        SELECT 
+                            p.product_name,
+                            p.official_price,
+                            p.discounted_price,
+                            p.price_per_unit,
+                            p.timestamp,
+                            s.store_name,
+                            s.url,
+                            pr.size
+                        FROM prices p
+                        JOIN stores s ON p.store_id = s.id
+                        JOIN presentations pr ON s.presentation_id = pr.id
+                        JOIN products prod ON pr.product_id = prod.id
+                        WHERE prod.alias = %s
+                        ORDER BY p.timestamp DESC
+                        LIMIT %s
+                    """, (product_alias, limit))
+                    
+                    return [dict(row) for row in cursor.fetchall()]
+        except Exception as e:
+            logger.error(f"Error obteniendo historial de precios para {product_alias}: {e}")
+            return []
