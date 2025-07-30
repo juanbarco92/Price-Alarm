@@ -146,22 +146,37 @@ def process_product(page: Page, db: PriceDatabase, url_info: Dict) -> None:
             # Obtener último precio oficial de la BD
             last_official_price = db.get_last_price(url)
             
+            # Obtener histórico completo para comparar con el precio más bajo
+            historical_prices = db.get_price_history(url, limit=50)  # Últimas 50 mediciones
+            
             # Determinar si hay que alertar
             should_alert = False
             alert_reason = ""
             
-            # Condición 1: Precio oficial bajó ≥ 10% (descuento histórico)
+            # Condición 1A: Precio oficial bajó ≥ 10% respecto al último precio registrado
             if last_official_price and official_price < last_official_price:
                 discount_percent = (last_official_price - official_price) / last_official_price
                 if discount_percent >= 0.10:
                     should_alert = True
                     alert_reason = f"Precio oficial bajó {discount_percent*100:.1f}% desde ${last_official_price:,.0f}"
             
-            # Condición 2: Hay precio con descuento (oferta promocional)
-            if discounted_price:
+            # Condición 1B: Precio actual es el más bajo histórico registrado
+            if historical_prices and not should_alert:  # Solo si no alertamos ya
+                min_historical_price = min(official_price for _, official_price, _, _, _ in historical_prices if official_price)
+                if official_price < min_historical_price:
+                    improvement_percent = ((min_historical_price - official_price) / min_historical_price) * 100
+                    should_alert = True
+                    alert_reason = f"¡PRECIO HISTÓRICO MÁS BAJO! Mejoró {improvement_percent:.1f}% desde el mínimo anterior ${min_historical_price:,.0f}"
+                    logger.info(f"Precio histórico más bajo detectado: {extracted_name} - ${min_historical_price:,.0f} → ${official_price:,.0f}")
+            
+            # Condición 2: Hay precio con descuento REAL (oferta promocional)
+            if discounted_price and discounted_price < official_price:
                 if not should_alert:  # Solo si no alertamos ya por la otra condición
                     should_alert = True
-                    alert_reason = f"Oferta promocional detectada: ${official_price:,.0f} → ${discounted_price:,.0f}"
+                    discount_percent = ((official_price - discounted_price) / official_price) * 100
+                    alert_reason = f"Oferta promocional detectada: {discount_percent:.1f}% descuento (${official_price:,.0f} → ${discounted_price:,.0f})"
+            elif discounted_price and discounted_price >= official_price:
+                logger.info(f"Precio 'tachado' encontrado pero no es descuento real: ${discounted_price:,.0f} >= ${official_price:,.0f}")
             
             # Enviar alerta si corresponde
             if should_alert:

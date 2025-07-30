@@ -5,7 +5,7 @@ products:
   - name: "Pañales Pampers Cruisers 360 T5"
     alias: "pampers_cruisers_t5"
     presentations:
-      - size: "56 unidades"
+      - size: "Talla 5 - 56 Unidades"
         unit_count: 56
         stores:
           - name: "Alkosto"

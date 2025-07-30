@@ -12,6 +12,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U priceuser -d pricealarm"]
       interval: 10s
@@ -38,10 +39,15 @@ services:
       - "5000:5000"
     environment:
       - PYTHONPATH=/app
-      - FLASK_ENV=production
-      - FLASK_DEBUG=0
       - DATABASE_URL=postgresql://priceuser:pricepass@db:5432/pricealarm
       - REDIS_URL=redis://redis:6379/0
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=pricealarm
+      - DB_USER=priceuser
+      - DB_PASSWORD=pricepass
+      - FLASK_ENV=production
+      - FLASK_DEBUG=0
       - TG_TOKEN=${TG_TOKEN}
       - TG_CHAT_ID=${TG_CHAT_ID}
     depends_on:
@@ -60,7 +66,7 @@ services:
       retries: 3
       start_period: 40s
 
-  # Scraper service (replicando cron job de Render)
+  # Scraper service (programado para ejecutarse cada hora)
   scraper:
     build:
       context: .
@@ -71,6 +77,11 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - TG_TOKEN=${TG_TOKEN}
       - TG_CHAT_ID=${TG_CHAT_ID}
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=pricealarm
+      - DB_USER=priceuser
+      - DB_PASSWORD=pricepass
     depends_on:
       db:
         condition: service_healthy
@@ -79,10 +90,7 @@ services:
     volumes:
       # Solo monta .env para variables, no código fuente (como en producción)
       - ./.env:/app/.env
-    # Simula el cron job de Render (6 AM y 6 PM diario)
-    # En desarrollo, se ejecuta manualmente o con docker-compose run
-    profiles:
-      - manual
+    restart: unless-stopped
 
   # Cron scheduler (simula el cron job de Render)
   cron-scheduler:

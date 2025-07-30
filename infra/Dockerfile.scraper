@@ -36,4 +36,4 @@ RUN chown -R scraper:scraper /app
 USER scraper
 
 # Default command (can be overridden)
-CMD ["python", "scraper/track.py"]
+CMD ["python", "scraper/main.py"]

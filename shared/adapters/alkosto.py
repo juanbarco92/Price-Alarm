@@ -53,20 +53,28 @@ def get_price(page: Page, url: str) -> Tuple[str, float, Optional[float]]:
         page.goto(url, wait_until="networkidle", timeout=30000)
         
         # Extraer nombre del producto
-        # TODO: Afinar selector CSS según la estructura actual de Alkosto
         product_name = _extract_product_name(page)
         
-        # Extraer precio actual
-        current_price = _extract_current_price(page)
+        # Extraer precio actual mostrado
+        current_displayed_price = _extract_current_price(page)
         
-        # Extraer precio anterior (si existe)
-        old_price = _extract_old_price(page)
+        # Extraer precio tachado (si existe)
+        old_tachado_price = _extract_old_price(page)
         
-        logger.info(f"Producto extraído: {product_name} - ${current_price}")
-        if old_price:
-            logger.info(f"Precio anterior encontrado: ${old_price}")
+        # Aplicar la nueva lógica:
+        # Si hay precio tachado, ese es el oficial y el actual es el descuento
+        # Si no hay precio tachado, el actual es el oficial
+        if old_tachado_price:
+            official_price = old_tachado_price
+            discounted_price = current_displayed_price
+            logger.info(f"Producto con descuento: {product_name}")
+            logger.info(f"Precio oficial: ${official_price:,.0f}, Con descuento: ${discounted_price:,.0f}")
+        else:
+            official_price = current_displayed_price
+            discounted_price = None
+            logger.info(f"Producto sin descuento: {product_name} - ${official_price:,.0f}")
         
-        return product_name, current_price, old_price
+        return product_name, official_price, discounted_price
         
     except PlaywrightTimeoutError:
         logger.error(f"Timeout al cargar la página: {url}")
